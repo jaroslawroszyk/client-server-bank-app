@@ -99,8 +99,11 @@ fn handle_client(mut stream: TcpStream, client: &Arc<Mutex<Client>>) -> io::Resu
                         continue;
                     }
                 };
-                client_ref.withdraw(ammount);
-                stream.write_all(b"Wyplata zrealizowana\n")?;
+                if client_ref.withdraw(ammount) {
+                    stream.write_all(b"Wyplata zrealizowana\n")?;
+                } else {
+                    stream.write_all(b"Brak wystarczajacych srodkow\n")?;
+                }
             }
             "exit" => {
                 break;
