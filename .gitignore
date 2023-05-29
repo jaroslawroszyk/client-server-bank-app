@@ -1,2 +1,6 @@
 target/
 foo
+.vscode/
+Client/Cargo.lock
+Server/Cargo.lock
+Server/data/
