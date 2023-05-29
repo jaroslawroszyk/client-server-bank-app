@@ -17,10 +17,10 @@ impl Client {
 
     fn send_request(&mut self, request: &str) -> io::Result<String> {
         self.stream.write(request.as_bytes())?;
-        
+
         let mut buffer = [0; 512];
         self.stream.read(&mut buffer)?;
-        
+
         let response = String::from_utf8_lossy(&buffer[..]);
         Ok(response.to_string())
     }
@@ -53,7 +53,10 @@ impl Client {
         let number2 = read_input("Enter destination account number: ")?;
         let amount = read_input("Enter transfer amount: ")?;
         let pin = read_input("Enter pin to confirm operation: ")?;
-        let out = format!("transfer {} {} {} {}", self.account_number, number2, amount, pin);
+        let out = format!(
+            "transfer {} {} {} {}",
+            self.account_number, number2, amount, pin
+        );
         let response = self.send_request(&out)?;
         println!("{}", response);
         Ok(())
@@ -62,8 +65,9 @@ impl Client {
     fn run(&mut self) -> io::Result<()> {
         println!("Connected to server!");
 
-        loop {
-            let operation = read_input("Enter your operation (balance, withdraw, deposit, transfer): ")?;
+        Ok(loop {
+            let operation =
+                read_input("Enter your operation (balance, withdraw, deposit, transfer, exit): ")?;
 
             match operation.as_str() {
                 "balance" => {
@@ -82,29 +86,85 @@ impl Client {
                     println!();
                     self.handle_transfer_operation()?;
                 }
+                "exit" => {
+                    println!("SEA!");
+                    break;
+                }
                 _ => {
                     println!("Unknown command '{}'", operation);
                 }
             }
-        }
+        })
+    }
+
+    fn is_valid_account_number(&self) -> bool {
+        self.account_number.len() == 10
     }
 }
 
 fn read_input(prompt: &str) -> io::Result<String> {
     print!("{}", prompt);
     io::stdout().flush()?;
-    
+
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
-    
+
     Ok(input.trim().to_string())
 }
 
 fn main() -> io::Result<()> {
     let address = "127.0.0.1:8080";
-    let account_number = read_input("Enter your account number: ")?;
+
+    let mut attempts = 3;
+    let mut account_number = String::new();
+
+    while attempts > 0 {
+        account_number = read_input("Enter your account number: ")?;
+
+        let mut client = match Client::new(address, account_number.clone()) {
+            Ok(client) => client,
+            Err(_) => {
+                attempts -= 1;
+                println!(
+                    "Invalid account number! Please try again. Attempts left: {}",
+                    attempts
+                );
+                if attempts == 0 {
+                    println!("Exceeded maximum number of attempts. Exiting...");
+                    return Ok(());
+                }
+                continue;
+            }
+        };
+
+        if client.is_valid_account_number() {
+            break;
+        } else {
+            attempts -= 1;
+            println!(
+                "Invalid account number! Please try again. Attempts left: {}",
+                attempts
+            );
+            if attempts == 0 {
+                println!("Exceeded maximum number of attempts. Exiting...");
+                return Ok(());
+            }
+        }
+    }
 
     let mut client = Client::new(address, account_number)?;
+    println!("Valid account number!");
     client.run()?;
     Ok(())
 }
+
+// Second version
+// fn main() -> io::Result<()> {
+//     let address = "127.0.0.1:8080";
+//     // let account_number = read_input("Enter your account number: ")?;
+
+//     // let mut client = Client::new(address, account_number.clone())?;
+//     let mut client = Client::new(address, String::new())?;
+//     client.run()?;
+//     Ok(())
+// }

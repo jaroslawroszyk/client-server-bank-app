@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
     name="Server"
-    path="src/Server.rs"
+    path="src/main.rs"
 
 [dependencies]
 rusqlite = "0.29.0"
