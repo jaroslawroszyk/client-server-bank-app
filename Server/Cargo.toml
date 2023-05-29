@@ -1,0 +1,11 @@
+[package]
+name = "Server"
+version = "1.0.0"
+edition = "2021"
+
+[[bin]]
+    name="Server"
+    path="src/Server.rs"
+
+[dependencies]
+rusqlite = "0.29.0"
