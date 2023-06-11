@@ -33,7 +33,17 @@ impl Client {
     }
 
     fn handle_withdraw_operation(&mut self) -> io::Result<()> {
-        let amount = read_input("Enter withdraw amount: ")?;
+        let mut amount: f64;
+        loop {
+            let amount_input = read_input("Enter withdraw amount: ")?;
+            match amount_input.trim().parse() {
+                Ok(value) if value > 0.0 => {
+                    amount = value;
+                    break;
+                }
+                _ => println!("Invalid amount. Please enter a valid number greater than 0."),
+            };
+        }
         let pin = read_input("Enter pin to confirm operation: ")?;
         let out = format!("withdraw {} {} {}", self.account_number, pin, amount);
         let response = self.send_request(&out)?;
@@ -50,14 +60,39 @@ impl Client {
     }
 
     fn handle_transfer_operation(&mut self) -> io::Result<()> {
-        let number2 = read_input("Enter destination account number: ")?;
-        let amount = read_input("Enter transfer amount: ")?;
-        let pin = read_input("Enter pin to confirm operation: ")?;
+        let number2 = loop {
+            let account_number = read_input("Enter destination account number: ")?;
+            // Sprawdzenie poprawności numeru konta (przykładowa logika sprawdzająca długość numeru konta)
+            if account_number.len() == 10 {
+                break account_number;
+            }
+            println!("Invalid account number. Please enter a valid account number.");
+        };
+    
+        let mut amount = loop {
+            let amount_input = read_input("Enter transfer amount: ")?;
+            if let Ok(parsed_amount) = amount_input.parse::<f64>() {
+                if parsed_amount >= 0.0 {
+                    break parsed_amount;
+                }
+            }
+            println!("Invalid amount. Please enter a non-negative number.");
+        };
+        
+        let pin = loop {
+            let entered_pin = read_input("Enter PIN to confirm operation: ")?;
+            if entered_pin.len() == 4 {
+                break entered_pin;
+            }
+            println!("Invalid PIN. Please enter a valid PIN.");
+        };
+    
         let out = format!(
             "transfer {} {} {} {}",
             self.account_number, number2, amount, pin
         );
         let response = self.send_request(&out)?;
+    
         println!("{}", response);
         Ok(())
     }

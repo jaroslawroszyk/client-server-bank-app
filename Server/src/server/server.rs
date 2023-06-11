@@ -1,7 +1,7 @@
+//dodac przy logowaniu haslo czy cos
 pub mod server {
     use std::io::{self, Read, Write};
     use std::net::{TcpListener, TcpStream};
-    use std::sync::MutexGuard;
     use std::sync::{Arc, Mutex};
     use std::thread;
 
@@ -14,7 +14,6 @@ pub mod server {
     use crate::server::customer::{find_account, Customer};
 
     fn handle_balance(customer: &Customer) -> String {
-        // Consider add sth ala "string_view ;_"
         format!("Balance: {:.2}", customer.balance)
     }
 
@@ -36,15 +35,6 @@ pub mod server {
         let amount = parts.get(2).unwrap().to_string().parse::<f64>().unwrap();
         customer.balance += amount;
         "Success".to_string()
-    }
-
-    fn parse_command(input: &str) -> Option<(&str, &str)> {
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.len() >= 2 {
-            Some((parts[0], parts[1]))
-        } else {
-            None
-        }
     }
 
     pub fn handle_client(mut stream: TcpStream, customers: Arc<Mutex<Vec<Customer>>>) {
@@ -80,25 +70,32 @@ pub mod server {
                         "withdraw" => handle_withdraw(&parts, customer),
                         "deposit" => handle_deposit(&parts, customer),
                         "transfer" => {
+                            // transferowanie
                             // todo handle_transfer
                             let dest = parts.get(2).unwrap().to_string();
                             let amount = parts.get(3).unwrap().to_string().parse::<f64>().unwrap();
                             let pin = parts.get(4).unwrap().to_string();
-
-                            if customer.pin != pin {
-                                "Invalid PIN.".to_string()
-                            } else if customer.balance >= amount {
-                                if let Some(index2) =
-                                    find_account(dest.as_str(), customers.as_ref())
-                                {
-                                    customers[index].balance -= amount;
-                                    customers[index2].balance += amount;
-                                    format!("Success! New balance: {}", customers[index].balance)
-                                } else {
-                                    "Unknown destination account number".to_string()
-                                }
+                            if amount <= 0.0 {
+                                format!("Incorrect ammount cannot be negative")
                             } else {
-                                "Insufficient funds.".to_string()
+                                if customer.pin != pin {
+                                    "Invalid PIN.".to_string()
+                                } else if customer.balance >= amount {
+                                    if let Some(index2) =
+                                        find_account(dest.as_str(), customers.as_ref())
+                                    {
+                                        customers[index].balance -= amount;
+                                        customers[index2].balance += amount;
+                                        format!(
+                                            "Success! New balance: {}",
+                                            customers[index].balance
+                                        )
+                                    } else {
+                                        "Unknown destination account number".to_string()
+                                    }
+                                } else {
+                                    "Insufficient funds.".to_string()
+                                }
                             }
                         }
                         _ => "Invalid operation.".to_string(),
