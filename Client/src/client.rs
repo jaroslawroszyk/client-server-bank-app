@@ -4,14 +4,16 @@ use std::net::TcpStream;
 struct Client {
     stream: TcpStream,
     account_number: String,
+    pin: String,
 }
 
 impl Client {
-    fn new(address: &str, account_number: String) -> io::Result<Self> {
+    fn new(address: &str, account_number: String, pin: String) -> io::Result<Self> {
         let stream = TcpStream::connect(address)?;
         Ok(Self {
             stream,
             account_number,
+            pin,
         })
     }
 
@@ -147,21 +149,26 @@ fn read_input(prompt: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
+
 fn main() -> io::Result<()> {
     let address = "127.0.0.1:8080";
 
     let mut attempts = 3;
     let mut account_number = String::new();
+    let mut pin = String::new();
+    let pin_for_client_one = "1234";
+    let pin_for_client_two = "4321";
 
     while attempts > 0 {
         account_number = read_input("Enter your account number: ")?;
+        pin = read_input("Enter your pin: ")?;
 
-        let mut client = match Client::new(address, account_number.clone()) {
+        let mut client = match Client::new(address, account_number.clone(), pin.clone()) {
             Ok(client) => client,
             Err(_) => {
                 attempts -= 1;
                 println!(
-                    "Invalid account number! Please try again. Attempts left: {}",
+                    "Invalid account number or PIN! Please try again. Attempts left: {}",
                     attempts
                 );
                 if attempts == 0 {
@@ -172,12 +179,12 @@ fn main() -> io::Result<()> {
             }
         };
 
-        if client.is_valid_account_number() {
+        if client.is_valid_account_number() && (client.account_number == "1234567890"  && pin == pin_for_client_one ||client.account_number == "0987654321" && pin == pin_for_client_two) {
             break;
         } else {
             attempts -= 1;
             println!(
-                "Invalid account number! Please try again. Attempts left: {}",
+                "Invalid account number or PIN! Please try again. Attempts left: {}",
                 attempts
             );
             if attempts == 0 {
@@ -187,11 +194,12 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let mut client = Client::new(address, account_number)?;
-    println!("Valid account number!");
+    let mut client = Client::new(address, account_number, pin)?;
+    println!("Valid account number and PIN!");
     client.run()?;
     Ok(())
 }
+
 
 // Second version
 // fn main() -> io::Result<()> {

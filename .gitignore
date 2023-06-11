@@ -4,3 +4,4 @@ foo
 Client/Cargo.lock
 Server/Cargo.lock
 Server/data/
+.DS_Store

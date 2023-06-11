@@ -64,7 +64,6 @@ pub mod server {
             match find_account(account_number, customers.as_ref()) {
                 Some(index) => {
                     let customer = &mut customers[index];
-
                     response = match command.trim() {
                         "balance" => handle_balance(customer),
                         "withdraw" => handle_withdraw(&parts, customer),

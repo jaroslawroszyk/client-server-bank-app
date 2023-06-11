@@ -10,3 +10,4 @@ edition = "2021"
 [dependencies]
 rusqlite = "0.29.0"
 crossterm = "0.20.0"
+bcrypt = "0.14.0"
