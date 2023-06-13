@@ -70,7 +70,7 @@ impl Client {
             }
             println!("Invalid account number. Please enter a valid account number.");
         };
-    
+
         let mut amount = loop {
             let amount_input = read_input("Enter transfer amount: ")?;
             if let Ok(parsed_amount) = amount_input.parse::<f64>() {
@@ -80,7 +80,7 @@ impl Client {
             }
             println!("Invalid amount. Please enter a non-negative number.");
         };
-        
+
         let pin = loop {
             let entered_pin = read_input("Enter PIN to confirm operation: ")?;
             if entered_pin.len() == 4 {
@@ -88,13 +88,13 @@ impl Client {
             }
             println!("Invalid PIN. Please enter a valid PIN.");
         };
-    
+
         let out = format!(
             "transfer {} {} {} {}",
             self.account_number, number2, amount, pin
         );
         let response = self.send_request(&out)?;
-    
+
         println!("{}", response);
         Ok(())
     }
@@ -149,65 +149,15 @@ fn read_input(prompt: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
-
 fn main() -> io::Result<()> {
     let address = "127.0.0.1:8080";
 
     let mut attempts = 3;
-    let mut account_number = String::new();
-    let mut pin = String::new();
-    let pin_for_client_one = "1234";
-    let pin_for_client_two = "4321";
-
-    while attempts > 0 {
-        account_number = read_input("Enter your account number: ")?;
-        pin = read_input("Enter your pin: ")?;
-
-        let mut client = match Client::new(address, account_number.clone(), pin.clone()) {
-            Ok(client) => client,
-            Err(_) => {
-                attempts -= 1;
-                println!(
-                    "Invalid account number or PIN! Please try again. Attempts left: {}",
-                    attempts
-                );
-                if attempts == 0 {
-                    println!("Exceeded maximum number of attempts. Exiting...");
-                    return Ok(());
-                }
-                continue;
-            }
-        };
-
-        if client.is_valid_account_number() && (client.account_number == "1234567890"  && pin == pin_for_client_one ||client.account_number == "0987654321" && pin == pin_for_client_two) {
-            break;
-        } else {
-            attempts -= 1;
-            println!(
-                "Invalid account number or PIN! Please try again. Attempts left: {}",
-                attempts
-            );
-            if attempts == 0 {
-                println!("Exceeded maximum number of attempts. Exiting...");
-                return Ok(());
-            }
-        }
-    }
+    let mut account_number = read_input("Enter your account number: ")?;
+    let mut pin = String::new(); // read_input("Enter your pin: ")?;
 
     let mut client = Client::new(address, account_number, pin)?;
     println!("Valid account number and PIN!");
     client.run()?;
     Ok(())
 }
-
-
-// Second version
-// fn main() -> io::Result<()> {
-//     let address = "127.0.0.1:8080";
-//     // let account_number = read_input("Enter your account number: ")?;
-
-//     // let mut client = Client::new(address, account_number.clone())?;
-//     let mut client = Client::new(address, String::new())?;
-//     client.run()?;
-//     Ok(())
-// }
