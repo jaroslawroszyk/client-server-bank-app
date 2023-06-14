@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
 
@@ -21,24 +22,98 @@ impl Client {
         self.stream.write(request.as_bytes())?;
 
         let mut buffer = [0; 512];
-        let bytes_read = self.stream.read(&mut buffer)?;
-        let response = String::from_utf8_lossy(&buffer[..bytes_read]).to_string();
-        Ok(response)
+        self.stream.read(&mut buffer)?;
+
+        let response = String::from_utf8_lossy(&buffer[..]);
+        Ok(response.to_string())
     }
 
     fn handle_balance_operation(&mut self) -> io::Result<()> {
-        let request = format!("balance {} {}\n", self.account_number, self.pin);
-        let response = self.send_request(&request)?;
+        let out = format!("balance {}", self.account_number);
+        let response = self.send_request(&out)?;
         println!("{}", response);
         Ok(())
     }
 
-    // ... pozostałe metody obsługujące operacje
+    fn handle_login(&mut self) -> io::Result<String> {
+        let out = format!("login {} {}", self.account_number, self.pin);
+        let response = self.send_request(&out)?;
+        println!("{}", response);
+        Ok(response)
+    }
 
-    fn run(&mut self) -> io::Result<()> {
-        println!("Connected to server!");
-
+    fn handle_withdraw_operation(&mut self) -> io::Result<()> {
+        let amount: f64;
         loop {
+            let amount_input = read_input("Enter withdraw amount: ")?;
+            match amount_input.trim().parse() {
+                Ok(value) if value > 0.0 => {
+                    amount = value;
+                    break;
+                }
+                _ => println!("Invalid amount. Please enter a valid number greater than 0."),
+            };
+        }
+        let pin = read_input("Enter pin to confirm operation: ")?;
+        let out = format!("withdraw {} {} {}", self.account_number, pin, amount);
+        let response = self.send_request(&out)?;
+        println!("{}", response);
+        Ok(())
+    }
+
+    fn handle_deposit_operation(&mut self) -> io::Result<()> {
+        let amount = read_input("Enter deposit amount: ")?;
+        let out = format!("deposit {} {}", self.account_number, amount);
+        let response = self.send_request(&out)?;
+        println!("{}", response);
+        Ok(())
+    }
+
+    fn handle_transfer_operation(&mut self) -> io::Result<()> {
+        let number2 = loop {
+            let account_number = read_input("Enter destination account number: ")?;
+            if account_number.len() == 10 {
+                break account_number;
+            }
+            println!("Invalid account number. Please enter a valid account number.");
+        };
+
+        let amount = loop {
+            let amount_input = read_input("Enter transfer amount: ")?;
+            if let Ok(parsed_amount) = amount_input.parse::<f64>() {
+                if parsed_amount >= 0.0 {
+                    break parsed_amount;
+                }
+            }
+            println!("Invalid amount. Please enter a non-negative number.");
+        };
+
+        let pin = loop {
+            let entered_pin = read_input("Enter PIN to confirm operation: ")?;
+            if entered_pin.len() == 4 {
+                break entered_pin;
+            }
+            println!("Invalid PIN. Please enter a valid PIN.");
+        };
+
+        let out = format!(
+            "transfer {} {} {} {}",
+            self.account_number, number2, amount, pin
+        );
+        let response = self.send_request(&out)?;
+
+        println!("{}", response);
+        Ok(())
+    }
+
+    fn run(&mut self) -> Result<(), Box<dyn Error>> {
+        println!("Connected to server!");
+        if let Ok(response) = self.handle_login() {
+            if response[..10].ne("logged in!") {
+                return Err("not logged".into());
+            }
+        }
+        Ok(loop {
             let operation =
                 read_input("Enter your operation (balance, withdraw, deposit, transfer, exit): ")?;
 
@@ -47,22 +122,27 @@ impl Client {
                     println!();
                     self.handle_balance_operation()?;
                 }
-                // ... obsługa pozostałych operacji
+                "withdraw" => {
+                    println!();
+                    self.handle_withdraw_operation()?;
+                }
+                "deposit" => {
+                    println!();
+                    self.handle_deposit_operation()?;
+                }
+                "transfer" => {
+                    println!();
+                    self.handle_transfer_operation()?;
+                }
                 "exit" => {
-                    println!("Goodbye!");
+                    println!("SEA!");
                     break;
                 }
                 _ => {
                     println!("Unknown command '{}'", operation);
                 }
             }
-        }
-
-        Ok(())
-    }
-
-    fn is_valid_account_number(&self) -> bool {
-        self.account_number.len() == 10
+        })
     }
 }
 
@@ -76,36 +156,13 @@ fn read_input(prompt: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let address = "127.0.0.1:8080";
 
-    let mut attempts = 3;
-    let mut account_number = read_input("Enter your account number: ")?;
-    let mut pin = String::new();
+    let account_number = read_input("Enter your account number: ")?;
+    let pin = read_input("Enter your pin: ")?;
 
-    while attempts > 0 {
-        pin = read_input("Enter your pin: ")?;
-        let client = Client::new(address, account_number.clone(), pin.clone());
-
-        match client {
-            Ok(mut client) => {
-                if client.is_valid_account_number() {
-                    println!("Valid account number and PIN!");
-                    return client.run();
-                } else {
-                    println!("Invalid account number.");
-                }
-            }
-            Err(_) => {
-                attempts -= 1;
-                println!(
-                    "Invalid account number or PIN. Attempts remaining: {}",
-                    attempts
-                );
-            }
-        }
-    }
-
-    println!("Too many incorrect attempts. Exiting...");
+    let mut client = Client::new(address, account_number, pin)?;
+    client.run()?;
     Ok(())
 }

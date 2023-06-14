@@ -2,5 +2,9 @@ target/
 foo
 .vscode/
 Client/Cargo.lock
-Server/Cargo.lock
+Client/target/
+Client/Cargo.lock
 .DS_Store
+Server/target/
+Server/DS_Store
+Server/Cargo.lock

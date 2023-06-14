@@ -1,13 +1,14 @@
 pub mod database {
+    use std::sync::{Arc, Mutex};
+
     use crate::server::customer::Customer;
     use rusqlite::{Connection, Result};
 
     pub fn write_customers_to_database(
-        customers: &[Customer],
+        customers_mutex: Arc<Mutex<Vec<Customer>>>,
         db_path: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = Connection::open(db_path)?;
-
         conn.execute("DELETE FROM customers", [])?; // Clear existing data
 
         let tx = conn.transaction()?;
@@ -15,8 +16,9 @@ pub mod database {
             "INSERT INTO customers (name, surname, pesel, account_number, pin, balance)
              VALUES (?, ?, ?, ?, ?, ?)",
         )?;
+        let customers = customers_mutex.lock().unwrap();
 
-        for customer in customers {
+        for customer in customers.iter() {
             statement.execute(&[
                 &customer.name,
                 &customer.surname,

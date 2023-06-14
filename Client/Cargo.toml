@@ -1,10 +1,10 @@
 [package]
-name = "Client"
+name = "client"
 version = "1.0.0"
 edition = "2021"
 
 [[bin]]
-    name="Client"
+    name="client"
     path="src/client.rs"
 
 [dependencies]
