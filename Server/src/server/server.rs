@@ -1,4 +1,3 @@
-//dodac przy logowaniu haslo czy cos
 pub mod server {
     use core::time;
     use std::io::{self, Read, Write};
@@ -155,93 +154,6 @@ pub mod server {
             thread::sleep(time::Duration::from_millis(50));
         }
     }
-    // pub fn handle_client(mut stream: TcpStream, customers: Arc<Mutex<Vec<Customer>>>) {
-    //     let mut buffer = [0; 512];
-
-    //     let bytes_read = stream.read(&mut buffer).unwrap();
-    //     if bytes_read == 0 {
-    //         return;
-    //     }
-
-    //     let input = String::from_utf8_lossy(&buffer[..bytes_read]);
-    //     let parts: Vec<&str> = input.split_whitespace().collect();
-
-    //     dbg!(&parts);
-    //     let command = parts[0];
-    //     let account_number = parts[1];
-    //     let pin = parts[2];
-
-    //     loop {
-    //         let bytes_read = stream.read(&mut buffer).unwrap();
-    //         if bytes_read == 0 {
-    //             return;
-    //         }
-
-    //         let input = String::from_utf8_lossy(&buffer[..bytes_read]);
-    //         let parts: Vec<&str> = input.split_whitespace().collect();
-
-    //         dbg!(&parts);
-    //         let command = parts[0];
-    //         let account_number = parts[1];
-
-    //         let response: String;
-
-    //         println!(
-    //             "Command: '{}', account number: {}",
-    //             command,
-    //             account_number.clone()
-    //         );
-    //         let mut customers = customers.lock().unwrap();
-
-    //         match find_account(account_number, customers.as_ref()) {
-    //             Some(index) => {
-    //                 let customer = &mut customers[index];
-    //                 response = match command.trim() {
-    //                     "balance" => handle_balance(customer),
-    //                     "withdraw" => handle_withdraw(&parts, customer),
-    //                     "deposit" => handle_deposit(&parts, customer),
-    //                     "transfer" => {
-    //                         // transferowanie
-    //                         // todo handle_transfer
-    //                         let dest = parts.get(2).unwrap().to_string();
-    //                         let amount = parts.get(3).unwrap().to_string().parse::<f64>().unwrap();
-    //                         let pin = parts.get(4).unwrap().to_string();
-    //                         if amount <= 0.0 {
-    //                             format!("Incorrect ammount cannot be negative")
-    //                         } else {
-    //                             if customer.pin != pin {
-    //                                 "Invalid PIN.".to_string()
-    //                             } else if customer.balance >= amount {
-    //                                 if let Some(index2) =
-    //                                     find_account(dest.as_str(), customers.as_ref())
-    //                                 {
-    //                                     customers[index].balance -= amount;
-    //                                     customers[index2].balance += amount;
-    //                                     format!(
-    //                                         "Success! New balance: {}",
-    //                                         customers[index].balance
-    //                                     )
-    //                                 } else {
-    //                                     "Unknown destination account number".to_string()
-    //                                 }
-    //                             } else {
-    //                                 "Insufficient funds.".to_string()
-    //                             }
-    //                         }
-    //                     }
-    //                     _ => "Invalid operation.".to_string(),
-    //                 };
-    //                 write_customers_to_database(customers.as_ref(), SAVE_PATH)
-    //                     .expect("Failed to save customers to file.");
-    //             }
-
-    //             None => {
-    //                 response = "Unknown account number".to_string();
-    //             }
-    //         }
-    //         let _ = stream.write(response.as_bytes());
-    //     }
-    // }
 
     pub fn start_server() -> io::Result<()> {
         let customers = Arc::new(Mutex::new(
